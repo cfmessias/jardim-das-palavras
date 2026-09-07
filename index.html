@@ -3,1028 +3,577 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-<title>O Jardim das Palavras</title>
+<title>O Jardim das Palavras - Escolas</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌻</text></svg>" />
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <style>
   html, body { margin:0; padding:0; background:#EAF7FF; min-height:100vh; }
-  #root { max-width: 720px; margin: 0 auto; min-height: 100vh; }
+  #root { max-width: 760px; margin: 0 auto; min-height: 100vh; }
   @media (min-width:760px){ body{ padding:24px 0; } #root{ min-height:auto; box-shadow:0 20px 60px rgba(46,42,38,0.12); border-radius:20px; overflow:hidden; } }
 </style>
 </head>
 <body>
 <div id="root"></div>
 
-<script>
-  const storage = {
-    async get(key) {
-      const v = localStorage.getItem(key);
-      return v === null ? null : { key, value: v };
-    },
-    async set(key, value) {
-      localStorage.setItem(key, value);
-      return { key, value };
-    },
-    async delete(key) {
-      localStorage.removeItem(key);
-      return { key, deleted: true };
-    },
-  };
-</script>
-
 <script type="text/javascript">
 const { useState, useEffect, useRef, createElement: h } = React;
 
 /* =========================================================================
-   O JARDIM DAS PALAVRAS
+   BANCO DE PALAVRAS POR ANO DE ESCOLARIDADE (1º AO 6º ANO)
    ========================================================================= */
 
-const CATEGORIES = [
-  {
-    id: "animais",
-    label: "Bicharada",
-    color: "#5CAE52",
-    colorDark: "#3F8A38",
-    colorSoft: "#E4F5DF",
-    icon: "paw",
-    words: [
-      {
-        id: "camaleao",
-        word: "camaleão",
-        emoji: "🦎",
-        hint: "Este animal muda de cor consoante o sítio onde está pousado.",
-        blankBefore: "O ",
-        blankAfter: " mudou de cor para se esconder entre as folhas.",
-      },
-      {
-        id: "ourico",
-        word: "ouriço",
-        emoji: "🦔",
-        hint: "Tem o corpo coberto de espinhos e enrola-se quando tem medo.",
-        blankBefore: "O ",
-        blankAfter: " enrolou-se numa bola cheia de espinhos.",
-      },
-      {
-        id: "morcego",
-        word: "morcego",
-        emoji: "🦇",
-        hint: "Voa de noite e dorme pendurado de cabeça para baixo.",
-        blankBefore: "O ",
-        blankAfter: " dormia pendurado no telhado da gruta.",
-      },
-      {
-        id: "flamingo",
-        word: "flamingo",
-        emoji: "🦩",
-        hint: "É uma ave cor-de-rosa que gosta de ficar à espera numa perna só.",
-        blankBefore: "O ",
-        blankAfter: " ficou equilibrado numa perna, à beira do lago.",
-      },
-    ],
-  },
-  {
-    id: "casa",
-    label: "Cá em Casa",
-    color: "#F2704E",
-    colorDark: "#C85A3B",
-    colorSoft: "#FEE9E1",
-    icon: "home",
-    words: [
-      {
-        id: "chave",
-        word: "chave",
-        emoji: "🔑",
-        hint: "Usamos este objeto para abrir e fechar a porta.",
-        blankBefore: "A ",
-        blankAfter: " estava escondida debaixo do tapete da entrada.",
-      },
-      {
-        id: "escada",
-        word: "escada",
-        emoji: "🪜",
-        hint: "Serve para subir ou descer entre os andares de uma casa.",
-        blankBefore: "O gato subiu pela ",
-        blankAfter: " até ao sótão.",
-      },
-      {
-        id: "espelho",
-        word: "espelho",
-        emoji: "🪞",
-        hint: "Quando olhamos para este objeto, vemos o nosso reflexo.",
-        blankBefore: "Ela penteou o cabelo em frente ao ",
-        blankAfter: ".",
-      },
-      {
-        id: "candeeiro",
-        word: "candeeiro",
-        emoji: "💡",
-        hint: "Usamos este objeto para iluminar uma sala quando escurece.",
-        blankBefore: "Acendemos o ",
-        blankAfter: " porque já estava escuro.",
-      },
-    ],
-  },
-  {
-    id: "natureza",
-    label: "Lá Fora",
-    color: "#6F52B5",
-    colorDark: "#54408A",
-    colorSoft: "#EAE3F8",
-    icon: "leaf",
-    words: [
-      {
-        id: "arco-iris",
-        word: "arco-íris",
-        emoji: "🌈",
-        hint: "Aparece no céu depois da chuva, com muitas cores.",
-        blankBefore: "Depois da chuva, apareceu um ",
-        blankAfter: " enorme no céu.",
-      },
-      {
-        id: "girassol",
-        word: "girassol",
-        emoji: "🌻",
-        hint: "É uma flor amarela que se vira para acompanhar o sol.",
-        blankBefore: "O ",
-        blankAfter: " virou-se lentamente para seguir o sol.",
-      },
-      {
-        id: "trovao",
-        word: "trovão",
-        emoji: "⛈️",
-        hint: "É o som forte que ouvimos durante uma tempestade.",
-        blankBefore: "Um ",
-        blankAfter: " assustou o cão durante a tempestade.",
-      },
-      {
-        id: "ninho",
-        word: "ninho",
-        emoji: "🪹",
-        hint: "É onde as aves põem os ovos e cuidam das crias.",
-        blankBefore: "O passarinho construiu um ",
-        blankAfter: " entre os ramos da árvore.",
-      },
-    ],
-  },
-];
+const WORDS_BY_GRADE = {
+  1: [
+    { id: "g1_gato", word: "gato", emoji: "🐱", hint: "Animal doméstico que faz miau.", blankBefore: "O ", blankAfter: " bebeu o leite da tigela." },
+    { id: "g1_sol", word: "sol", emoji: "☀️", hint: "Brilha no céu e dá luz e calor.", blankBefore: "Hoje o ", blankAfter: " está muito forte." },
+    { id: "g1_bola", word: "bola", emoji: "⚽", hint: "Objeto redondo usado para jogar futebol.", blankBefore: "Ele deu um pontapé na ", blankAfter: "." },
+    { id: "g1_casa", word: "casa", emoji: "🏠", hint: "Lugar onde vivemos com a família.", blankBefore: "A minha ", blankAfter: " tem um jardim bonito." }
+  ],
+  2: [
+    { id: "g2_arvore", word: "árvore", emoji: "🌳", hint: "Planta grande com tronco, ramos e folhas.", blankBefore: "O passarinho fez o ninho na ", blankAfter: "." },
+    { id: "g2_janela", word: "janela", emoji: "🪟", hint: "Abertura na parede para entrar luz e ar.", blankBefore: "Abri a ", blankAfter: " para ver a chuva a cair." },
+    { id: "g2_estrela", word: "estrela", emoji: "⭐", hint: "Ponto brilhante que vemos no céu à noite.", blankBefore: "A ", blankAfter: " mais brilhante guiava os marinheiros." },
+    { id: "g2_mochila", word: "mochila", emoji: "🎒", hint: "Saco que levamos nas costas para a escola.", blankBefore: "Guardei os cadernos na minha ", blankAfter: "." }
+  ],
+  3: [
+    { id: "g3_borboleta", word: "borboleta", emoji: "🦋", hint: "Inseto com asas coloridas que voa entre as flores.", blankBefore: "Uma ", blankAfter: " voou por cima das rosas." },
+    { id: "g3_tempestade", word: "tempestade", emoji: "⛈️", hint: "Chuva forte acompanhada de vento e trovões.", blankBefore: "A ", blankAfter: " fez muito barulho durante a noite." },
+    { id: "g3_biblioteca", word: "biblioteca", emoji: "📚", hint: "Lugar com muitos livros para ler e estudar.", blankBefore: "Fomos à ", blankAfter: " requisitar um livro de aventuras." },
+    { id: "g3_bussola", word: "bússola", emoji: "🧭", hint: "Instrumento com agulha magnética que indica o Norte.", blankBefore: "O explorador usou a ", blankAfter: " para não se perder." }
+  ],
+  4: [
+    { id: "g4_arquipelago", word: "arquipélago", emoji: "🏝️", hint: "Conjunto de várias ilhas reunidas no mar.", blankBefore: "Os Açores são um ", blankAfter: " português no Atlântico." },
+    { id: "g4_telescopio", word: "telescópio", emoji: "🔭", hint: "Instrumento ótico para observar os astros distantes.", blankBefore: "Olhámos para a Lua através do ", blankAfter: "." },
+    { id: "g4_metamorfose", word: "metamorfose", emoji: "🐛", hint: "Transformação que alguns animais sofrem no seu desenvolvimento.", blankBefore: "A lagarta passa por uma ", blankAfter: " até virar borboleta." },
+    { id: "g4_ecossistema", word: "ecossistema", emoji: "🌍", hint: "Conjunto formado pelos seres vivos e o seu meio ambiente.", blankBefore: "É fundamental proteger o ", blankAfter: " da floresta." }
+  ],
+  5: [
+    { id: "g5_biodiversidade", word: "biodiversidade", emoji: "🌿", hint: "Variedade de espécies de seres vivos num determinado habitat.", blankBefore: "A poluição ameaça a ", blankAfter: " dos oceanos." },
+    { id: "g5_civilizacao", word: "civilização", emoji: "🏛️", hint: "Conjunto de aspetos culturais, científicos e sociais de um povo.", blankBefore: "A ", blankAfter: " grega deixou-nos um grande legado." },
+    { id: "g5_hipotese", word: "hipótese", emoji: "💡", hint: "Suposição que se faz para tentar explicar um fenómeno.", blankBefore: "O cientista formulou uma ", blankAfter: " para a sua experiência." },
+    { id: "g5_atmosfera", word: "atmosfera", emoji: "🌌", hint: "Camada de gases que envolve e protege a Terra.", blankBefore: "A ", blankAfter: " protege o nosso planeta dos raios nocivos." }
+  ],
+  6: [
+    { id: "g6_persistência", word: "persistência", emoji: "🧗", hint: "Qualidade de quem não desiste perante as dificuldades.", blankBefore: "Com muita ", blankAfter: ", ele conseguiu superar o desafio." },
+    { id: "g6_soberania", word: "soberania", emoji: "👑", hint: "Poder supremo e independente de um Estado.", blankBefore: "A constituição garante a ", blankAfter: " do povo." },
+    { id: "g6_sustentabilidade", word: "sustentabilidade", emoji: "🌱", hint: "Uso consciente dos recursos sem comprometer o futuro.", blankBefore: "A ", blankAfter: " é essencial para combater as alterações climáticas." },
+    { id: "g6_imparcialidade", word: "imparcialidade", emoji: "⚖️", hint: "Capacidade de julgar sem tomar partes ou emitir favoritismos.", blankBefore: "O juiz manteve total ", blankAfter: " durante o julgamento." }
+  ]
+};
 
-const ALL_WORDS = CATEGORIES.flatMap((c) =>
-  c.words.map((w) => ({ ...w, categoryId: c.id }))
-);
-const MAX_STARS = ALL_WORDS.length * 3;
+const INITIAL_CLASS_DATA = {
+  teacherPin: "1234",
+  students: [
+    { id: "st_1", name: "Ana Silva", pin: "1111", grade: 2, avatar: { skin: "#FFDBB4", hairColor: "#D4A017", hairStyle: "liso" }, progress: {} },
+    { id: "st_2", name: "Diogo Costa", pin: "2222", grade: 4, avatar: { skin: "#C68642", hairColor: "#2E2321", hairStyle: "encaracolado" }, progress: {} }
+  ]
+};
 
-const SKIN_TONES = ["#FFDBB4", "#F1C27D", "#C68642", "#8D5524"];
-const HAIR_COLORS = ["#2E2321", "#7A4A2B", "#D4A017", "#8B2E2E"];
-const HAIR_STYLES = ["liso", "encaracolado"];
-
-const ACCESSORIES = [
-  { id: "chapeu", label: "Chapéu de explorador", threshold: 6 },
-  { id: "oculos", label: "Óculos redondos", threshold: 14 },
-  { id: "capa", label: "Capa de aventuras", threshold: 22 },
-  { id: "coroa", label: "Coroa de campeão", threshold: 30 },
-];
-
-const PRAISE = [
-  "Boa! Isso mesmo!",
-  "Muito bem, continua assim!",
-  "Certinho! Estás a aprender depressa.",
-  "Excelente! Essa palavra já é tua.",
-  "Perfeito! Que orgulho.",
-];
-const RETRY = [
-  "Quase! Tenta outra vez.",
-  "Não foi essa, mas tu consegues.",
-  "Hmm, vamos tentar de novo.",
-  "Ainda não é essa. Pensa bem no significado.",
-];
-
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-function pick(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
 function normalize(s) {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-function makeQuizOptions(word, categoryId) {
-  const sameCat = ALL_WORDS.filter(
-    (w) => w.categoryId === categoryId && w.id !== word.id
-  );
-  const others = ALL_WORDS.filter(
-    (w) => w.categoryId !== categoryId && w.id !== word.id
-  );
-  const pool = shuffle([...sameCat, ...shuffle(others)]).slice(0, 3);
-  return shuffle([word, ...pool]);
-}
-
-/* ---------------------------- Avatar ---------------------------- */
-
-function Avatar({ config, stars, size = 120, mood = "happy" }) {
-  const unlocked = ACCESSORIES.filter((a) => stars >= a.threshold);
-  const bestAccessory = unlocked[unlocked.length - 1];
-  const skin = config.skin;
-  const hairColor = config.hairColor;
-  const s = size;
-
-  return h("svg", { width: s, height: s, viewBox: "0 0 200 200", "aria-label": "Avatar" },
-    bestAccessory?.id === "capa" && h("path", { d: "M 40 120 Q 100 90 160 120 L 175 195 L 25 195 Z", fill: "#F2704E" }),
-    h("circle", { cx: 100, cy: 100, r: 62, fill: skin }),
-    h("circle", { cx: 40, cy: 102, r: 10, fill: skin }),
-    h("circle", { cx: 160, cy: 102, r: 10, fill: skin }),
-    config.hairStyle === "liso"
-      ? h("path", { d: "M 40 90 Q 45 30 100 30 Q 155 30 160 90 Q 130 65 100 65 Q 70 65 40 90 Z", fill: hairColor })
-      : h("g", { fill: hairColor },
-          h("circle", { cx: 55, cy: 55, r: 16 }),
-          h("circle", { cx: 80, cy: 38, r: 17 }),
-          h("circle", { cx: 110, cy: 34, r: 17 }),
-          h("circle", { cx: 140, cy: 45, r: 16 }),
-          h("circle", { cx: 155, cy: 70, r: 14 }),
-          h("circle", { cx: 45, cy: 75, r: 13 })
-        ),
-    mood === "happy" && h(React.Fragment, null,
-      h("path", { d: "M 75 105 Q 82 95 89 105", stroke: "#2E2A26", strokeWidth: 4, fill: "none", strokeLinecap: "round" }),
-      h("path", { d: "M 111 105 Q 118 95 125 105", stroke: "#2E2A26", strokeWidth: 4, fill: "none", strokeLinecap: "round" })
-    ),
-    mood === "sad" && h(React.Fragment, null,
-      h("circle", { cx: 82, cy: 103, r: 4, fill: "#2E2A26" }),
-      h("circle", { cx: 118, cy: 103, r: 4, fill: "#2E2A26" })
-    ),
-    mood === "excited" && h(React.Fragment, null,
-      h("circle", { cx: 82, cy: 102, r: 6, fill: "#2E2A26" }),
-      h("circle", { cx: 118, cy: 102, r: 6, fill: "#2E2A26" }),
-      h("circle", { cx: 80, cy: 100, r: 2, fill: "#fff" }),
-      h("circle", { cx: 116, cy: 100, r: 2, fill: "#fff" })
-    ),
-    h("circle", { cx: 68, cy: 122, r: 8, fill: "#FF8B6A", opacity: 0.35 }),
-    h("circle", { cx: 132, cy: 122, r: 8, fill: "#FF8B6A", opacity: 0.35 }),
-    mood === "sad"
-      ? h("path", { d: "M 85 138 Q 100 128 115 138", stroke: "#2E2A26", strokeWidth: 4, fill: "none", strokeLinecap: "round" })
-      : h("path", { d: "M 82 130 Q 100 148 118 130", stroke: "#2E2A26", strokeWidth: 4, fill: "none", strokeLinecap: "round" }),
-    bestAccessory?.id === "oculos" && h("g", { fill: "none", stroke: "#2E2A26", strokeWidth: 4 },
-      h("circle", { cx: 82, cy: 104, r: 16, fill: "rgba(255,255,255,0.35)" }),
-      h("circle", { cx: 118, cy: 104, r: 16, fill: "rgba(255,255,255,0.35)" }),
-      h("line", { x1: 98, y1: 104, x2: 102, y2: 104 })
-    ),
-    (bestAccessory?.id === "chapeu" || bestAccessory?.id === "capa") && h("g", null,
-      h("ellipse", { cx: 100, cy: 52, rx: 55, ry: 10, fill: "#6F52B5" }),
-      h("path", { d: "M 65 55 Q 70 10 100 10 Q 130 10 135 55 Z", fill: "#8C6FD1" })
-    ),
-    bestAccessory?.id === "coroa" && h("g", { fill: "#FFC857", stroke: "#C89A2E", strokeWidth: 2 },
-      h("polygon", { points: "55,52 65,20 80,42 100,14 120,42 135,20 145,52" }),
-      h("circle", { cx: 65, cy: 20, r: 4, fill: "#F2704E", stroke: "none" }),
-      h("circle", { cx: 100, cy: 14, r: 4, fill: "#5CAE52", stroke: "none" }),
-      h("circle", { cx: 135, cy: 20, r: 4, fill: "#F2704E", stroke: "none" })
-    )
-  );
-}
-
-function StarBadge({ stars, max, size = "normal" }) {
-  return h("span", { className: `star-badge ${size}` },
-    h("svg", { viewBox: "0 0 24 24", width: 16, height: 16 },
-      h("path", {
-        fill: "#FFC857",
-        stroke: "#C89A2E",
-        strokeWidth: 1,
-        d: "M12 2 L14.9 8.6 L22 9.3 L16.7 14 L18.2 21 L12 17.3 L5.8 21 L7.3 14 L2 9.3 L9.1 8.6 Z"
-      })
-    ),
-    stars,
-    max ? h("span", { className: "star-max" }, "/", max) : null
-  );
-}
-
-function ProgressDots({ stage }) {
-  const labels = ["Descobre", "Frase", "Escreve"];
-  return h("div", { className: "progress-dots", "aria-hidden": true },
-    labels.map((l, i) =>
-      h("div", { key: l, className: `p-dot ${i < stage ? "done" : ""} ${i === stage ? "active" : ""}` })
-    )
-  );
-}
-
-/* ============================== APP ============================== */
+/* =========================================================================
+   COMPONENTE PRINCIPAL
+   ========================================================================= */
 
 function App() {
-  const [loading, setLoading] = useState(true);
-  const [screen, setScreen] = useState("setup");
-  const [avatar, setAvatar] = useState({
-    name: "",
-    skin: SKIN_TONES[0],
-    hairColor: HAIR_COLORS[0],
-    hairStyle: "liso",
-  });
-  const [progress, setProgress] = useState({});
-  const [activeCategory, setActiveCategory] = useState(null);
+  const [classData, setClassData] = useState(INITIAL_CLASS_DATA);
+  const [screen, setScreen] = useState("login"); // login | teacher_pin | teacher_dash | student_pin | game
+  const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [currentStudent, setCurrentStudent] = useState(null);
   const [activeWord, setActiveWord] = useState(null);
-  const [toast, setToast] = useState(null);
-  const saveTimer = useRef(null);
-
-  const totalStars = ALL_WORDS.reduce((sum, w) => sum + (progress[w.id] || 0), 0);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await storage.get("jdp-profile");
-        if (res && res.value) {
-          const data = JSON.parse(res.value);
-          if (data.avatar) setAvatar(data.avatar);
-          if (data.progress) setProgress(data.progress);
-          if (data.setupDone) setScreen("map");
-        }
-      } catch (e) {
-      } finally {
-        setLoading(false);
-      }
-    })();
+    const saved = localStorage.getItem("jdp_class_data");
+    if (saved) {
+      try { setClassData(JSON.parse(saved)); } catch(e) {}
+    }
   }, []);
 
-  function saveProfile(next) {
-    clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(async () => {
-      try {
-        await storage.set("jdp-profile", JSON.stringify({ setupDone: true, ...next }));
-      } catch (e) {
-        console.error("Não foi possível guardar o progresso", e);
+  function saveClassData(newData) {
+    setClassData(newData);
+    localStorage.setItem("jdp_class_data", JSON.stringify(newData));
+  }
+
+  function handleUpdateStudentProgress(studentId, wordId, newStage) {
+    const updatedStudents = classData.students.map(st => {
+      if (st.id === studentId) {
+        const nextProgress = { ...st.progress, [wordId]: newStage };
+        const updated = { ...st, progress: nextProgress };
+        if (currentStudent && currentStudent.id === studentId) {
+          setCurrentStudent(updated);
+        }
+        return updated;
       }
-    }, 250);
-  }
-
-  function finishSetup() {
-    const finalName = avatar.name.trim() || "Explorador";
-    const next = { ...avatar, name: finalName };
-    setAvatar(next);
-    setScreen("map");
-    saveProfile({ avatar: next, progress });
-  }
-
-  function advanceWord(wordId, prevStars) {
-    const current = progress[wordId] || 0;
-    const nextStage = Math.min(3, current + 1);
-    const nextProgress = { ...progress, [wordId]: nextStage };
-    setProgress(nextProgress);
-    saveProfile({ avatar, progress: nextProgress });
-
-    const newTotal = ALL_WORDS.reduce((sum, w) => sum + (nextProgress[w.id] || 0), 0);
-    const crossed = ACCESSORIES.find((a) => prevStars < a.threshold && newTotal >= a.threshold);
-    if (crossed) {
-      setToast({ type: "unlock", accessory: crossed });
-    } else if (nextStage === 3) {
-      setToast({ type: "mastered", word: wordId });
-    }
-    return nextStage;
-  }
-
-  function resetGame() {
-    setProgress({});
-    setAvatar({ name: "", skin: SKIN_TONES[0], hairColor: HAIR_COLORS[0], hairStyle: "liso" });
-    setScreen("setup");
-    storage.delete("jdp-profile").catch(() => {});
-  }
-
-  if (loading) {
-    return h("div", { className: "jdp-root" },
-      h(Style),
-      h("div", { className: "loading-screen" },
-        h("div", { className: "loading-seed" }, "🌱"),
-        h("p", null, "A preparar o jardim...")
-      )
-    );
+      return st;
+    });
+    saveClassData({ ...classData, students: updatedStudents });
   }
 
   return h("div", { className: "jdp-root" },
     h(Style),
-    screen === "setup" && h(SetupScreen, { avatar, setAvatar, onFinish: finishSetup }),
-    screen === "map" && h(MapScreen, {
-      avatar, progress, totalStars,
-      onOpenCategory: (cat) => { setActiveCategory(cat); setScreen("category"); },
-      onReset: resetGame
+    screen === "login" && h(LoginScreen, {
+      students: classData.students,
+      onSelectStudent: (id) => { setSelectedStudentId(id); setScreen("student_pin"); },
+      onOpenTeacher: () => setScreen("teacher_pin")
     }),
-    screen === "category" && activeCategory && h(CategoryScreen, {
-      category: activeCategory, progress,
-      onBack: () => setScreen("map"),
-      onOpenWord: (word) => { setActiveWord(word); setScreen("activity"); }
+    screen === "student_pin" && h(StudentPinScreen, {
+      student: classData.students.find(s => s.id === selectedStudentId),
+      onBack: () => setScreen("login"),
+      onSuccess: (st) => { setCurrentStudent(st); setScreen("game"); }
     }),
-    screen === "activity" && activeWord && h(ActivityScreen, {
-      word: activeWord, category: activeCategory, stage: progress[activeWord.id] || 0,
-      totalStars, avatar,
-      onExit: () => setScreen("category"),
-      onComplete: (prevStars) => advanceWord(activeWord.id, prevStars)
+    screen === "teacher_pin" && h(TeacherPinScreen, {
+      correctPin: classData.teacherPin,
+      onBack: () => setScreen("login"),
+      onSuccess: () => setScreen("teacher_dash")
     }),
-    toast && h(ToastOverlay, { toast, onClose: () => setToast(null) })
+    screen === "teacher_dash" && h(TeacherDashboard, {
+      classData,
+      onSaveData: saveClassData,
+      onExit: () => setScreen("login")
+    }),
+    screen === "game" && currentStudent && h(StudentGame, {
+      student: currentStudent,
+      onProgress: (wordId, stage) => handleUpdateStudentProgress(currentStudent.id, wordId, stage),
+      onLogout: () => { setCurrentStudent(null); setScreen("login"); }
+    })
   );
 }
 
-/* --------------------------- Setup screen --------------------------- */
+/* =========================================================================
+   ECRÃS DE LOGIN E PIN
+   ========================================================================= */
 
-function SetupScreen({ avatar, setAvatar, onFinish }) {
-  return h("div", { className: "screen setup-screen" },
-    h("div", { className: "setup-card" },
-      h("h1", null, "Cria o teu explorador"),
-      h("p", { className: "sub" }, "Vais aprender palavras novas e usá-las em frases. Primeiro, escolhe como é o teu avatar."),
-      h("div", { className: "setup-body" },
-        h("div", { className: "avatar-preview" }, h(Avatar, { config: avatar, stars: 0, size: 160 })),
-        h("div", { className: "setup-controls" },
-          h("label", { className: "field-label", htmlFor: "name-input" }, "Como te chamas?"),
-          h("input", {
-            id: "name-input", className: "text-input", placeholder: "Escreve o teu nome",
-            value: avatar.name, maxLength: 16,
-            onChange: (e) => setAvatar((a) => ({ ...a, name: e.target.value }))
-          }),
-          h("span", { className: "field-label" }, "Cor da pele"),
-          h("div", { className: "swatch-row" },
-            SKIN_TONES.map((c) => h("button", {
-              key: c, className: `swatch ${avatar.skin === c ? "selected" : ""}`,
-              style: { background: c }, "aria-label": "Cor de pele " + c,
-              onClick: () => setAvatar((a) => ({ ...a, skin: c }))
-            }))
-          ),
-          h("span", { className: "field-label" }, "Cor do cabelo"),
-          h("div", { className: "swatch-row" },
-            HAIR_COLORS.map((c) => h("button", {
-              key: c, className: `swatch ${avatar.hairColor === c ? "selected" : ""}`,
-              style: { background: c }, "aria-label": "Cor de cabelo " + c,
-              onClick: () => setAvatar((a) => ({ ...a, hairColor: c }))
-            }))
-          ),
-          h("span", { className: "field-label" }, "Estilo do cabelo"),
-          h("div", { className: "pill-row" },
-            HAIR_STYLES.map((hStyle) => h("button", {
-              key: hStyle, className: `pill ${avatar.hairStyle === hStyle ? "selected" : ""}`,
-              onClick: () => setAvatar((a) => ({ ...a, hairStyle: hStyle }))
-            }, hStyle === "liso" ? "Liso" : "Encaracolado"))
-          )
+function LoginScreen({ students, onSelectStudent, onOpenTeacher }) {
+  return h("div", { className: "screen login-screen" },
+    h("div", { className: "header-tag" }, "🌻 O Jardim das Palavras · Escolas"),
+    h("h1", null, "Quem vai jogar agora?"),
+    h("p", { className: "sub" }, "Escolhe o teu nome da lista para entrares na tua aventura."),
+    h("div", { className: "student-grid" },
+      students.map(s => h("button", {
+        key: s.id, className: "student-card",
+        onClick: () => onSelectStudent(s.id)
+      },
+        h("div", { className: "avatar-circle" }, s.name.charAt(0)),
+        h("div", { className: "st-info" },
+          h("div", { className: "st-name" }, s.name),
+          h("div", { className: "st-grade" }, `${s.grade}.º Ano de Escolaridade`)
         )
-      ),
-      h("button", { className: "btn-primary big", onClick: onFinish }, "Começar a aventura")
+      ))
+    ),
+    h("button", { className: "teacher-link", onClick: onOpenTeacher }, "🔑 Área do Professor")
+  );
+}
+
+function StudentPinScreen({ student, onBack, onSuccess }) {
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState(false);
+
+  if (!student) return null;
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (pin === student.pin) {
+      onSuccess(student);
+    } else {
+      setError(true);
+      setPin("");
+    }
+  }
+
+  return h("div", { className: "screen center-screen" },
+    h("div", { className: "card-box" },
+      h("button", { className: "ghost-btn", onClick: onBack }, "← Voltar"),
+      h("h2", null, `Olá, ${student.name}!`),
+      h("p", { className: "sub" }, "Introduz o teu PIN de 4 dígitos dado pelo professor."),
+      h("form", { onSubmit: handleSubmit },
+        h("input", {
+          type: "password", maxLength: 4, className: "pin-input", autoFocus: true,
+          value: pin, onChange: (e) => { setError(false); setPin(e.target.value); }
+        }),
+        error && h("p", { className: "err-msg" }, "PIN incorreto. Tenta novamente."),
+        h("button", { type: "submit", className: "btn-primary big", disabled: pin.length < 4 }, "Entrar no Jogo")
+      )
     )
   );
 }
 
-/* ---------------------------- Map screen ---------------------------- */
+function TeacherPinScreen({ correctPin, onBack, onSuccess }) {
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState(false);
 
-function MapScreen({ avatar, progress, totalStars, onOpenCategory, onReset }) {
-  const [confirmingReset, setConfirmingReset] = useState(false);
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (pin === correctPin) {
+      onSuccess();
+    } else {
+      setError(true);
+      setPin("");
+    }
+  }
 
-  return h("div", { className: "screen map-screen" },
-    h("header", { className: "map-header" },
-      h("div", { className: "map-header-left" },
-        h(Avatar, { config: avatar, stars: totalStars, size: 64 }),
-        h("div", null,
-          h("div", { className: "hello" }, `Olá, ${avatar.name}!`),
-          h(StarBadge, { stars: totalStars, max: MAX_STARS })
+  return h("div", { className: "screen center-screen" },
+    h("div", { className: "card-box" },
+      h("button", { className: "ghost-btn", onClick: onBack }, "← Voltar"),
+      h("h2", null, "Acesso do Docente"),
+      h("p", { className: "sub" }, "Insira o PIN de administração (Predefinido: 1234)."),
+      h("form", { onSubmit: handleSubmit },
+        h("input", {
+          type: "password", maxLength: 6, className: "pin-input", autoFocus: true,
+          value: pin, onChange: (e) => { setError(false); setPin(e.target.value); }
+        }),
+        error && h("p", { className: "err-msg" }, "PIN incorreto."),
+        h("button", { type: "submit", className: "btn-primary big" }, "Autenticar")
+      )
+    )
+  );
+}
+
+/* =========================================================================
+   PAINEL DO PROFESSOR (GESTAO DE ALUNOS E TURMA)
+   ========================================================================= */
+
+function TeacherDashboard({ classData, onSaveData, onExit }) {
+  const [newName, setNewName] = useState("");
+  const [newPin, setNewPin] = useState("");
+  const [newGrade, setNewGrade] = useState(1);
+  const [teacherPinInput, setTeacherPinInput] = useState(classData.teacherPin);
+
+  function handleAddStudent(e) {
+    e.preventDefault();
+    if (!newName.trim() || !newPin.trim()) return;
+    const newSt = {
+      id: "st_" + Date.now(),
+      name: newName.trim(),
+      pin: newPin.trim(),
+      grade: parseInt(newGrade, 10),
+      avatar: { skin: "#FFDBB4", hairColor: "#2E2321", hairStyle: "liso" },
+      progress: {}
+    };
+    onSaveData({ ...classData, students: [...classData.students, newSt] });
+    setNewName("");
+    setNewPin("");
+  }
+
+  function handleDeleteStudent(id) {
+    if (confirm("Tem a certeza que deseja remover este aluno?")) {
+      const updated = classData.students.filter(s => s.id !== id);
+      onSaveData({ ...classData, students: updated });
+    }
+  }
+
+  function handleUpdateTeacherPin() {
+    if (teacherPinInput.trim().length >= 4) {
+      onSaveData({ ...classData, teacherPin: teacherPinInput.trim() });
+      alert("PIN do professor atualizado com sucesso!");
+    }
+  }
+
+  function handleExportJSON() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(classData, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", "turma_jardim_palavras.json");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  }
+
+  function handleImportJSON(e) {
+    const fileReader = new FileReader();
+    if (e.target.files[0]) {
+      fileReader.readAsText(e.target.files[0], "UTF-8");
+      fileReader.onload = (event) => {
+        try {
+          const parsed = JSON.parse(event.target.result);
+          if (parsed.students && parsed.teacherPin) {
+            onSaveData(parsed);
+            alert("Dados da turma importados com sucesso!");
+          }
+        } catch(err) {
+          alert("Ficheiro JSON inválido.");
+        }
+      };
+    }
+  }
+
+  return h("div", { className: "screen dashboard-screen" },
+    h("header", { className: "dash-header" },
+      h("h1", null, "Painel do Professor"),
+      h("button", { className: "ghost-btn", onClick: onExit }, "Sair")
+    ),
+    h("div", { className: "dash-grid" },
+      h("div", { className: "dash-card" },
+        h("h3", null, "Adicionar Aluno"),
+        h("form", { onSubmit: handleAddStudent, className: "form-stack" },
+          h("input", {
+            className: "text-input", placeholder: "Nome do Aluno",
+            value: newName, onChange: (e) => setNewName(e.target.value)
+          }),
+          h("div", { className: "row-input" },
+            h("input", {
+              className: "text-input", placeholder: "PIN (4 dígitos)", maxLength: 4,
+              value: newPin, onChange: (e) => setNewPin(e.target.value)
+            }),
+            h("select", {
+              className: "text-input", value: newGrade,
+              onChange: (e) => setNewGrade(e.target.value)
+            },
+              [1,2,3,4,5,6].map(g => h("option", { key: g, value: g }, `${g}.º Ano`))
+            )
+          ),
+          h("button", { type: "submit", className: "btn-primary" }, "Criar Aluno")
         )
       ),
-      h("button", { className: "ghost-btn", onClick: () => setConfirmingReset(true) }, "Recomeçar")
-    ),
-    h("h1", { className: "map-title" }, "O Jardim das Palavras"),
-    h("p", { className: "map-sub" }, "Escolhe uma zona para explorar."),
-    h("div", { className: "island-grid" },
-      CATEGORIES.map((cat) => {
-        const mastered = cat.words.filter((w) => (progress[w.id] || 0) === 3).length;
-        return h("button", {
-          key: cat.id, className: "island-card",
-          style: { background: cat.colorSoft, borderColor: cat.color },
-          onClick: () => onOpenCategory(cat)
-        },
-          h("div", { className: "island-icon", style: { background: cat.color } }, h(CategoryIcon, { id: cat.icon })),
-          h("div", { className: "island-name", style: { color: cat.colorDark } }, cat.label),
-          h("div", { className: "island-progress" }, `${mastered} de ${cat.words.length} dominadas`),
-          h("div", { className: "mini-bar" },
-            h("div", { className: "mini-bar-fill", style: { width: `${(mastered / cat.words.length) * 100}%`, background: cat.color } })
+      h("div", { className: "dash-card" },
+        h("h3", null, "Definições da Conta"),
+        h("div", { className: "form-stack" },
+          h("label", { className: "field-label" }, "Alterar PIN do Professor"),
+          h("div", { className: "row-input" },
+            h("input", {
+              className: "text-input", value: teacherPinInput,
+              onChange: (e) => setTeacherPinInput(e.target.value)
+            }),
+            h("button", { className: "btn-primary", onClick: handleUpdateTeacherPin }, "Guardar")
+          ),
+          h("hr", null),
+          h("div", { className: "row-input" },
+            h("button", { className: "ghost-btn", onClick: handleExportJSON }, "💾 Exportar Turma (JSON)"),
+            h("label", { className: "ghost-btn upload-btn" },
+              "📁 Importar JSON",
+              h("input", { type: "file", accept: ".json", onChange: handleImportJSON, style: { display: "none" } })
+            )
           )
-        );
-      })
+        )
+      )
     ),
-    h("div", { className: "accessory-shelf" },
-      h("span", { className: "field-label" }, "Coleção"),
-      h("div", { className: "accessory-row" },
-        ACCESSORIES.map((a) => {
-          const unlocked = totalStars >= a.threshold;
-          return h("div", { key: a.id, className: `accessory-chip ${unlocked ? "unlocked" : ""}`, title: a.label },
-            unlocked ? "★" : a.threshold,
-            h("span", { className: "accessory-label" }, a.label)
+    h("h2", { style: { marginTop: "24px" } }, "Lista de Alunos"),
+    h("div", { className: "table-card" },
+      h("table", { className: "dash-table" },
+        h("thead", null,
+          h("tr", null,
+            h("th", null, "Nome"),
+            h("th", null, "Ano"),
+            h("th", null, "PIN"),
+            h("th", null, "Progresso"),
+            h("th", null, "Ações")
+          )
+        ),
+        h("tbody", null,
+          classData.students.map(st => {
+            const gradeWords = WORDS_BY_GRADE[st.grade] || [];
+            const completed = gradeWords.filter(w => (st.progress[w.id] || 0) === 3).length;
+            return h("tr", { key: st.id },
+              h("td", { className: "td-bold" }, st.name),
+              h("td", null, `${st.grade}.º Ano`),
+              h("td", null, h("code", null, st.pin)),
+              h("td", null, `${completed} / ${gradeWords.length} palavras dominadas`),
+              h("td", null,
+                h("button", { className: "danger-btn", onClick: () => handleDeleteStudent(st.id) }, "Remover")
+              )
+            );
+          })
+        )
+      )
+    )
+  );
+}
+
+/* =========================================================================
+   MÓDULO DO JOGO (ALUNO)
+   ========================================================================= */
+
+function StudentGame({ student, onProgress, onLogout }) {
+  const [activeWord, setActiveWord] = useState(null);
+  const words = WORDS_BY_GRADE[student.grade] || WORDS_BY_GRADE[1];
+
+  return h("div", { className: "screen game-screen" },
+    h("header", { className: "game-header" },
+      h("div", null,
+        h("h2", null, `Olá, ${student.name}!`),
+        h("span", { className: "grade-badge" }, `${student.grade}.º Ano de Escolaridade`)
+      ),
+      h("button", { className: "ghost-btn", onClick: onLogout }, "Sair")
+    ),
+    !activeWord ? h("div", null,
+      h("h1", { className: "map-title" }, "Palavras para Aprender"),
+      h("p", { className: "sub" }, "Escolhe uma palavra para completar os 3 passos."),
+      h("div", { className: "word-grid" },
+        words.map(w => {
+          const stage = student.progress[w.id] || 0;
+          return h("button", {
+            key: w.id, className: `word-card ${stage === 3 ? "mastered" : ""}`,
+            onClick: () => setActiveWord(w)
+          },
+            stage === 3 && h("div", { className: "mastered-ribbon" }, "★ Dominada"),
+            h("div", { className: "word-emoji" }, w.emoji),
+            h("div", { className: "word-name" }, w.word),
+            h("div", { className: "stage-label" }, `Passo ${Math.min(stage + 1, 3)} de 3`)
           );
         })
       )
-    ),
-    confirmingReset && h("div", { className: "modal-backdrop" },
-      h("div", { className: "modal-card" },
-        h("h2", null, "Recomeçar o jogo?"),
-        h("p", null, "Isto vai apagar o avatar e todas as palavras aprendidas."),
-        h("div", { className: "modal-actions" },
-          h("button", { className: "ghost-btn", onClick: () => setConfirmingReset(false) }, "Cancelar"),
-          h("button", { className: "btn-primary", onClick: onReset }, "Sim, recomeçar")
-        )
-      )
-    )
+    ) : h(WordActivity, {
+      word: activeWord,
+      currentStage: student.progress[activeWord.id] || 0,
+      onBack: () => setActiveWord(null),
+      onAdvance: () => {
+        const next = Math.min(3, (student.progress[activeWord.id] || 0) + 1);
+        onProgress(activeWord.id, next);
+        if (next === 3) setActiveWord(null);
+      }
+    })
   );
 }
 
-function CategoryIcon({ id }) {
-  if (id === "paw") {
-    return h("svg", { viewBox: "0 0 24 24", width: 26, height: 26, fill: "#fff" },
-      h("circle", { cx: 7, cy: 8, r: 2.2 }),
-      h("circle", { cx: 12, cy: 6, r: 2.2 }),
-      h("circle", { cx: 17, cy: 8, r: 2.2 }),
-      h("path", { d: "M12 12c-3.5 0-6 2.2-6 4.6 0 1.7 1.5 2.9 3.2 2.4.9-.3 1.8-.4 2.8-.4s1.9.1 2.8.4c1.7.5 3.2-.7 3.2-2.4 0-2.4-2.5-4.6-6-4.6z" })
-    );
-  }
-  if (id === "home") {
-    return h("svg", { viewBox: "0 0 24 24", width: 26, height: 26, fill: "#fff" },
-      h("path", { d: "M12 3 2 11h3v9h6v-6h2v6h6v-9h3z" })
-    );
-  }
-  return h("svg", { viewBox: "0 0 24 24", width: 26, height: 26, fill: "#fff" },
-    h("path", { d: "M12 2C7 6 5 10 5 13.5 5 18 8.5 21 12 21s7-3 7-7.5C19 10 17 6 12 2z" })
-  );
-}
-
-/* -------------------------- Category screen -------------------------- */
-
-function CategoryScreen({ category, progress, onBack, onOpenWord }) {
-  return h("div", { className: "screen category-screen" },
-    h("header", { className: "category-header" },
-      h("button", { className: "ghost-btn", onClick: onBack }, "← Voltar ao mapa")
-    ),
-    h("div", { className: "category-banner", style: { background: category.color } },
-      h(CategoryIcon, { id: category.icon }),
-      h("h1", null, category.label)
-    ),
-    h("div", { className: "word-grid" },
-      category.words.map((w) => {
-        const stage = progress[w.id] || 0;
-        const mastered = stage === 3;
-        return h("button", {
-          key: w.id, className: `word-card ${mastered ? "mastered" : ""}`,
-          style: { borderColor: category.color },
-          onClick: () => onOpenWord(w)
-        },
-          mastered && h("div", { className: "mastered-ribbon" }, "★ Dominada"),
-          h("div", { className: "word-emoji" }, w.emoji),
-          h("div", { className: "word-name" }, stage === 0 ? "???" : w.word),
-          h(ProgressDots, { stage })
-        );
-      })
-    )
-  );
-}
-
-/* -------------------------- Activity screen -------------------------- */
-
-function ActivityScreen({ word, category, stage, totalStars, avatar, onExit, onComplete }) {
-  if (stage >= 3) return h(MasteredCard, { word, category, avatar, onExit });
-  if (stage === 0) return h(QuizStage, { word, category, avatar, onExit, onSuccess: () => onComplete(totalStars) });
-  if (stage === 1) return h(SentenceChoiceStage, { word, category, avatar, onExit, onSuccess: () => onComplete(totalStars) });
-  return h(WriteStage, { word, category, avatar, onExit, onSuccess: () => onComplete(totalStars) });
-}
-
-function ActivityShell({ category, title, stepLabel, onExit, mood, avatar, children }) {
-  return h("div", { className: "screen activity-screen", style: { "--cat-color": category.color } },
-    h("header", { className: "activity-header" },
-      h("button", { className: "ghost-btn", onClick: onExit }, "← Sair"),
-      h("span", { className: "step-label", style: { color: category.colorDark } }, stepLabel)
-    ),
-    h("div", { className: "activity-avatar" }, h(Avatar, { config: avatar, stars: 0, size: 90, mood })),
-    h("h1", { className: "activity-title" }, title),
-    children
-  );
-}
-
-function QuizStage({ word, category, avatar, onExit, onSuccess }) {
-  const [options] = useState(() => makeQuizOptions(word, category.id));
+function WordActivity({ word, currentStage, onBack, onAdvance }) {
+  const [userText, setUserText] = useState("");
   const [feedback, setFeedback] = useState(null);
-  const [message, setMessage] = useState("De que palavra estamos a falar?");
-  const [locked, setLocked] = useState(false);
 
-  function choose(opt) {
-    if (locked) return;
-    if (opt.id === word.id) {
+  function handleStage1() {
+    setFeedback("right");
+    setTimeout(() => { setFeedback(null); onAdvance(); }, 800);
+  }
+
+  function handleStage2() {
+    setFeedback("right");
+    setTimeout(() => { setFeedback(null); onAdvance(); }, 800);
+  }
+
+  function handleStage3() {
+    const clean = normalize(userText);
+    if (clean.includes(normalize(word.word)) && userText.trim().split(/\s+/).length >= 3) {
       setFeedback("right");
-      setMessage(pick(PRAISE));
-      setLocked(true);
-      setTimeout(onSuccess, 900);
+      setTimeout(() => { setFeedback(null); onAdvance(); }, 1000);
     } else {
       setFeedback("wrong");
-      setMessage(pick(RETRY));
-      setTimeout(() => setFeedback(null), 500);
     }
   }
 
-  return h(ActivityShell, {
-    category, title: "Descobre a palavra", stepLabel: "Passo 1 · Descobre", onExit, avatar,
-    mood: feedback === "wrong" ? "sad" : feedback === "right" ? "excited" : "happy"
-  },
+  return h("div", { className: "activity-box" },
+    h("button", { className: "ghost-btn", onClick: onBack }, "← Voltar às palavras"),
     h("div", { className: "quiz-card" },
       h("div", { className: "quiz-emoji" }, word.emoji),
+      h("h2", null, word.word),
       h("p", { className: "quiz-hint" }, word.hint)
     ),
-    h("p", { className: `feedback-line ${feedback || ""}` }, message),
-    h("div", { className: "options-grid" },
-      options.map((opt) => h("button", {
-        key: opt.id, className: "option-btn", onClick: () => choose(opt), disabled: locked
-      }, opt.word))
-    )
-  );
-}
-
-function SentenceChoiceStage({ word, category, avatar, onExit, onSuccess }) {
-  const [options] = useState(() => makeQuizOptions(word, category.id));
-  const [selected, setSelected] = useState(null);
-  const [feedback, setFeedback] = useState(null);
-  const [message, setMessage] = useState("Escolhe a palavra certa para completar a frase.");
-  const [locked, setLocked] = useState(false);
-
-  function confirm() {
-    if (!selected || locked) return;
-    if (selected.id === word.id) {
-      setFeedback("right");
-      setMessage(pick(PRAISE));
-      setLocked(true);
-      setTimeout(onSuccess, 900);
-    } else {
-      setFeedback("wrong");
-      setMessage(pick(RETRY));
-      setTimeout(() => { setFeedback(null); setSelected(null); }, 600);
-    }
-  }
-
-  return h(ActivityShell, {
-    category, title: "Completa a frase", stepLabel: "Passo 2 · Frase", onExit, avatar,
-    mood: feedback === "wrong" ? "sad" : feedback === "right" ? "excited" : "happy"
-  },
-    h("div", { className: "sentence-card" },
-      word.blankBefore,
-      h("span", { className: `blank-slot ${selected ? "filled" : ""} ${feedback === "wrong" ? "wrong" : ""}` },
-        selected ? selected.word : "______"
-      ),
-      word.blankAfter
+    currentStage === 0 && h("div", { className: "action-area" },
+      h("h3", null, "Passo 1: Reconhece a palavra"),
+      h("button", { className: "btn-primary big", onClick: handleStage1 }, `Confirmar palavra "${word.word}"`)
     ),
-    h("p", { className: `feedback-line ${feedback || ""}` }, message),
-    h("div", { className: "chip-row" },
-      options.map((opt) => h("button", {
-        key: opt.id, className: `chip ${selected?.id === opt.id ? "selected" : ""}`,
-        onClick: () => setSelected(opt), disabled: locked
-      }, opt.word))
+    currentStage === 1 && h("div", { className: "action-area" },
+      h("h3", null, "Passo 2: Completa a frase"),
+      h("p", { className: "sentence-card" }, word.blankBefore, h("u", null, word.word), word.blankAfter),
+      h("button", { className: "btn-primary big", onClick: handleStage2 }, "Compreendi o contexto")
     ),
-    h("button", { className: "btn-primary", disabled: !selected || locked, onClick: confirm }, "Confirmar")
-  );
-}
-
-function WriteStage({ word, category, avatar, onExit, onSuccess }) {
-  const [text, setText] = useState("");
-  const [feedback, setFeedback] = useState(null);
-  const [message, setMessage] = useState(`Escreve uma frase tua com a palavra "${word.word}".`);
-  const [locked, setLocked] = useState(false);
-
-  function submit() {
-    if (locked) return;
-    const clean = text.trim();
-    const words = clean.split(/\s+/).filter(Boolean);
-    const containsWord = normalize(clean).includes(normalize(word.word));
-
-    if (!clean) {
-      setMessage("Escreve a tua frase na caixa antes de enviar.");
-      setFeedback("wrong");
-      return;
-    }
-    if (!containsWord) {
-      setFeedback("wrong");
-      setMessage(`Não encontrei a palavra "${word.word}" na tua frase. Tenta incluir essa palavra.`);
-      return;
-    }
-    if (words.length < 3) {
-      setFeedback("wrong");
-      setMessage("A tua frase é muito curta. Tenta escrever uma frase completa.");
-      return;
-    }
-    setFeedback("right");
-    setMessage(pick(PRAISE) + " Frase guardada no teu caderno.");
-    setLocked(true);
-    setTimeout(onSuccess, 1100);
-  }
-
-  return h(ActivityShell, {
-    category, title: "Escreve a tua frase", stepLabel: "Passo 3 · Escreve", onExit, avatar,
-    mood: feedback === "wrong" ? "sad" : feedback === "right" ? "excited" : "happy"
-  },
-    h("div", { className: "write-card" },
-      h("div", { className: "write-word" },
-        h("span", { className: "write-emoji" }, word.emoji),
-        h("span", null, word.word)
-      ),
-      h("p", { className: "write-hint" }, word.hint),
+    currentStage === 2 && h("div", { className: "action-area" },
+      h("h3", null, `Passo 3: Escreve uma frase tua com "${word.word}"`),
       h("textarea", {
-        className: "write-input", rows: 3,
-        placeholder: `Ex.: ontem vi um ${word.word} muito bonito.`,
-        value: text, onChange: (e) => setText(e.target.value), disabled: locked
-      })
+        className: "write-input", rows: 3, placeholder: "Escreve a tua frase aqui...",
+        value: userText, onChange: (e) => setUserText(e.target.value)
+      }),
+      feedback === "wrong" && h("p", { className: "err-msg" }, `A frase deve conter a palavra "${word.word}" e ter pelo menos 3 palavras.`),
+      h("button", { className: "btn-primary big", onClick: handleStage3 }, "Validar Frase")
     ),
-    h("p", { className: `feedback-line ${feedback || ""}` }, message),
-    h("button", { className: "btn-primary", disabled: locked, onClick: submit }, "Enviar frase")
+    feedback === "right" && h("p", { className: "success-msg" }, "Excelente! Passo concluído com sucesso! 🎉")
   );
 }
 
-function MasteredCard({ word, category, avatar, onExit }) {
-  return h(ActivityShell, {
-    category, title: "Palavra dominada", stepLabel: "Revisão", onExit, avatar, mood: "excited"
-  },
-    h("div", { className: "quiz-card" },
-      h("div", { className: "quiz-emoji" }, word.emoji),
-      h("div", { className: "mastered-word" }, word.word),
-      h("p", { className: "quiz-hint" }, word.hint),
-      h("p", { className: "example-sentence" },
-        `"${word.blankBefore}`,
-        h("strong", null, word.word),
-        `${word.blankAfter}"`
-      )
-    ),
-    h("button", { className: "btn-primary", onClick: onExit }, "Voltar às palavras")
-  );
-}
-
-/* ----------------------------- Toast ----------------------------- */
-
-function ToastOverlay({ toast, onClose }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 2600);
-    return () => clearTimeout(t);
-  }, [onClose]);
-
-  return h("div", { className: "toast-backdrop", onClick: onClose },
-    h("div", { className: "toast-card" },
-      Array.from({ length: 14 }).map((_, i) =>
-        h("span", {
-          key: i, className: "confetti-bit",
-          style: {
-            left: `${(i * 37) % 100}%`,
-            animationDelay: `${(i % 7) * 0.08}s`,
-            background: ["#FFC857", "#F2704E", "#5CAE52", "#6F52B5"][i % 4],
-          }
-        })
-      ),
-      toast.type === "unlock"
-        ? h(React.Fragment, null,
-            h("div", { className: "toast-emoji" }, "🎉"),
-            h("h2", null, "Novo acessório!"),
-            h("p", null, `Desbloqueaste: ${toast.accessory.label}`)
-          )
-        : h(React.Fragment, null,
-            h("div", { className: "toast-emoji" }, "⭐"),
-            h("h2", null, "Palavra dominada!"),
-            h("p", null, "Já sabes usar essa palavra em frases.")
-          )
-    )
-  );
-}
-
-/* ------------------------------ Style ------------------------------ */
+/* =========================================================================
+   ESTILOS CSS
+   ========================================================================= */
 
 function Style() {
   return h("style", null, `
-    @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Quicksand:wght@500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Quicksand:wght@500;600;700&display=swap');
 
     .jdp-root {
-      --sky: #8FD3F4;
       --sky-light: #EAF7FF;
       --paper: #FFFDF7;
       --ink: #2E2A26;
       --ink-soft: #6b6459;
-      --sun: #FFC857;
       --coral: #F2704E;
+      --green: #5CAE52;
       font-family: 'Quicksand', sans-serif;
       color: var(--ink);
-      min-height: 100%;
-      background: linear-gradient(180deg, var(--sky-light) 0%, #FFFDF7 55%);
-      border-radius: 20px;
-      overflow: hidden;
-      position: relative;
+      min-height: 100vh;
+      background: var(--paper);
     }
     .jdp-root * { box-sizing: border-box; }
-    .jdp-root h1, .jdp-root h2 {
-      font-family: 'Baloo 2', sans-serif;
-      margin: 0;
-    }
-    .jdp-root button { font-family: inherit; cursor: pointer; }
-    .jdp-root textarea, .jdp-root input { font-family: inherit; }
+    .screen { padding: 24px; max-width: 720px; margin: 0 auto; }
+    .center-screen { display:flex; justify-content:center; align-items:center; min-height: 80vh; }
+    
+    h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0 0 8px; }
+    .sub { color: var(--ink-soft); margin-bottom: 20px; line-height: 1.4; }
+    .header-tag { font-size: 13px; font-weight: 700; color: var(--coral); text-transform: uppercase; margin-bottom: 8px; }
 
-    .loading-screen {
-      min-height: 420px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      color: var(--ink-soft);
+    .student-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .student-card {
+      display: flex; align-items: center; gap: 12px; background: #fff; border: 2px solid #E7E1D3;
+      border-radius: 18px; padding: 14px; text-align: left; cursor: pointer; transition: border-color .2s;
     }
-    .loading-seed { font-size: 40px; animation: bob 1.2s ease-in-out infinite; }
-    @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    .student-card:hover { border-color: var(--coral); }
+    .avatar-circle {
+      width: 44px; height: 44px; border-radius: 50%; background: var(--sky-light);
+      display: flex; align-items: center; justify-content: center; font-family: 'Baloo 2'; font-weight: 800; color: var(--coral);
+    }
+    .st-name { font-weight: 700; }
+    .st-grade { font-size: 12px; color: var(--ink-soft); }
 
-    .screen { padding: 24px; }
+    .teacher-link { background: none; border: none; color: var(--ink-soft); font-weight: 700; cursor: pointer; text-decoration: underline; }
 
-    /* ---------- setup ---------- */
-    .setup-screen { display:flex; justify-content:center; padding: 32px 20px; }
-    .setup-card {
-      max-width: 560px;
-      width: 100%;
-      background: var(--paper);
-      border-radius: 28px;
-      padding: 28px;
-      box-shadow: 0 10px 0 rgba(46,42,38,0.06);
+    .card-box { background: #fff; border: 2px solid #E7E1D3; border-radius: 24px; padding: 28px; width: 100%; max-width: 380px; text-align: center; }
+    .pin-input {
+      width: 100%; font-size: 28px; letter-spacing: 8px; text-align: center; padding: 10px;
+      border: 2px solid #E7E1D3; border-radius: 14px; margin: 16px 0; outline: none;
     }
-    .setup-card h1 { font-size: 26px; }
-    .sub { color: var(--ink-soft); margin: 8px 0 20px; line-height:1.5; }
-    .setup-body { display:flex; gap:24px; align-items:flex-start; flex-wrap: wrap; }
-    .avatar-preview {
-      flex-shrink:0;
-      background: var(--sky-light);
-      border-radius: 24px;
-      padding: 16px;
-      display:flex; align-items:center; justify-content:center;
-    }
-    .setup-controls { flex:1; min-width: 220px; display:flex; flex-direction:column; gap:6px; }
-    .field-label { font-weight:700; font-size: 13px; color: var(--ink-soft); margin-top: 10px; }
-    .text-input {
-      border: 2px solid #E7E1D3; border-radius: 14px; padding: 10px 14px;
-      font-size: 16px; outline: none; background:#fff;
-    }
-    .text-input:focus { border-color: var(--coral); }
-    .swatch-row, .pill-row { display:flex; gap:8px; flex-wrap:wrap; }
-    .swatch {
-      width: 34px; height:34px; border-radius: 50%; border: 3px solid transparent;
-    }
-    .swatch.selected { border-color: var(--ink); }
-    .pill {
-      border: 2px solid #E7E1D3; background:#fff; border-radius: 999px;
-      padding: 7px 16px; font-weight:600; font-size:14px;
-    }
-    .pill.selected { border-color: var(--coral); background: #FEE9E1; color:#C85A3B; }
+    .pin-input:focus { border-color: var(--coral); }
+
     .btn-primary {
-      background: var(--coral); color:#fff; border:none; border-radius: 999px;
-      padding: 12px 22px; font-weight:700; font-size:15px;
-      box-shadow: 0 4px 0 #C85A3B;
-      transition: transform .08s;
+      background: var(--coral); color: #fff; border: none; border-radius: 999px;
+      padding: 10px 20px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 0 #C85A3B;
     }
-    .btn-primary:active { transform: translateY(2px); box-shadow: 0 2px 0 #C85A3B; }
-    .btn-primary:disabled { background:#D9D2C4; box-shadow:0 4px 0 #bfb8ab; cursor:not-allowed; }
-    .btn-primary.big { width:100%; margin-top: 22px; padding: 15px; font-size:17px; }
-    .ghost-btn {
-      background: transparent; border: none; color: var(--ink-soft);
-      font-weight:700; font-size: 14px; padding: 8px 4px;
-    }
-    .ghost-btn:hover { color: var(--ink); }
+    .btn-primary.big { width: 100%; padding: 14px; font-size: 16px; }
+    .ghost-btn { background: none; border: none; color: var(--ink-soft); font-weight: 700; cursor: pointer; }
+    .danger-btn { background: #E74C3C; color: #fff; border: none; padding: 6px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
 
-    /* ---------- map ---------- */
-    .map-header {
-      display:flex; align-items:center; justify-content:space-between;
-      margin-bottom: 10px;
-    }
-    .map-header-left { display:flex; align-items:center; gap:12px; }
-    .hello { font-family:'Baloo 2'; font-weight:700; font-size:17px; }
-    .star-badge {
-      display:inline-flex; align-items:center; gap:4px; font-weight:700;
-      background: #FFF3D6; color:#9A7315; padding:3px 10px; border-radius: 999px; font-size:13px;
-    }
-    .star-max { color:#c2ac6f; font-weight:600; }
-    .map-title { font-size: 24px; margin-top: 14px; }
-    .map-sub { color: var(--ink-soft); margin: 4px 0 18px; }
+    .text-input { width: 100%; padding: 10px; border: 2px solid #E7E1D3; border-radius: 12px; outline: none; }
+    .row-input { display: flex; gap: 8px; }
 
-    .island-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:14px; }
-    .island-card {
-      border: 3px solid; border-radius: 24px; padding: 18px 14px; text-align:left;
-      display:flex; flex-direction:column; gap:6px; background:#fff;
-    }
-    .island-icon {
-      width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-    }
-    .island-name { font-family:'Baloo 2'; font-weight:700; font-size:17px; margin-top:4px; }
-    .island-progress { font-size:12.5px; color: var(--ink-soft); }
-    .mini-bar { height:8px; background: rgba(0,0,0,0.08); border-radius:999px; overflow:hidden; margin-top:2px; }
-    .mini-bar-fill { height:100%; border-radius:999px; transition: width .3s; }
+    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    @media (max-width: 600px) { .dash-grid { grid-template-columns: 1fr; } }
+    .dash-card { background: #fff; border: 2px solid #E7E1D3; border-radius: 18px; padding: 18px; }
+    .form-stack { display: flex; flex-direction: column; gap: 10px; }
 
-    .accessory-shelf { margin-top: 26px; }
-    .accessory-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:8px; }
-    .accessory-chip {
-      width:52px; height:52px; border-radius:16px; background:#EFEAE0; color:#a89f8c;
-      display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;
-      position:relative;
-    }
-    .accessory-chip.unlocked { background: #FFF3D6; color:#9A7315; }
-    .accessory-label {
-      position:absolute; bottom:-22px; left:50%; transform:translateX(-50%);
-      font-size:9.5px; font-weight:600; color: var(--ink-soft); white-space:nowrap;
-      opacity:0; transition: opacity .15s; pointer-events:none;
-    }
-    .accessory-chip:hover .accessory-label { opacity:1; }
+    .table-card { background: #fff; border: 2px solid #E7E1D3; border-radius: 18px; overflow: hidden; margin-top: 12px; }
+    .dash-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+    .dash-table th, .dash-table td { padding: 12px 14px; border-bottom: 1px solid #E7E1D3; }
+    .dash-table th { background: #F8F6F0; font-weight: 700; }
+    .td-bold { font-weight: 700; }
 
-    /* ---------- category ---------- */
-    .category-banner {
-      display:flex; align-items:center; gap:12px; padding: 20px; border-radius:22px; color:#fff; margin: 8px 0 20px;
-    }
-    .category-banner h1 { font-size:22px; }
-    .word-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr)); gap:14px; }
+    .game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .grade-badge { background: var(--sky-light); color: #2980B9; font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 999px; }
+
+    .word-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; }
     .word-card {
-      border: 3px solid; border-radius: 20px; background:#fff; padding: 16px 10px;
-      display:flex; flex-direction:column; align-items:center; gap:6px; position:relative;
+      background: #fff; border: 2px solid #E7E1D3; border-radius: 18px; padding: 16px; text-align: center;
+      cursor: pointer; position: relative;
     }
-    .word-card.mastered { background: #FFFBEF; }
-    .mastered-ribbon {
-      position:absolute; top:-10px; background: var(--sun); color:#6b4f04; font-size:10.5px;
-      font-weight:800; padding:3px 8px; border-radius:999px;
-    }
-    .word-emoji { font-size: 34px; }
-    .word-name { font-weight:700; }
-    .progress-dots { display:flex; gap:5px; margin-top:2px; }
-    .p-dot { width:8px; height:8px; border-radius:50%; background:#E7E1D3; }
-    .p-dot.done { background: var(--cat-color, #5CAE52); }
-    .p-dot.active { outline: 2px solid var(--coral); outline-offset:1px; }
+    .word-card.mastered { border-color: var(--green); background: #F4FBF4; }
+    .mastered-ribbon { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--green); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; }
+    .word-emoji { font-size: 36px; }
+    .word-name { font-weight: 700; margin: 6px 0 2px; }
+    .stage-label { font-size: 11px; color: var(--ink-soft); }
 
-    /* ---------- activity ---------- */
-    .activity-screen { display:flex; flex-direction:column; align-items:center; text-align:center; }
-    .activity-header { width:100%; display:flex; justify-content:space-between; align-items:center; }
-    .step-label { font-weight:800; font-size:13px; }
-    .activity-avatar { margin-top: 4px; }
-    .activity-title { font-size:22px; margin: 8px 0 16px; }
-
-    .quiz-card, .sentence-card, .write-card {
-      background:#fff; border-radius:22px; padding: 20px; width:100%; max-width:420px;
-      box-shadow: 0 6px 0 rgba(46,42,38,0.05);
-    }
+    .activity-box { background: #fff; border: 2px solid #E7E1D3; border-radius: 24px; padding: 24px; text-align: center; }
+    .quiz-card { margin: 16px 0; }
     .quiz-emoji { font-size: 56px; }
-    .quiz-hint { color: var(--ink-soft); margin-top:8px; line-height:1.5; }
-    .mastered-word { font-family:'Baloo 2'; font-size:22px; font-weight:700; margin-top:4px; }
-    .example-sentence { margin-top:12px; font-style:italic; color: var(--ink-soft); }
-
-    .sentence-card { font-size:18px; line-height:1.7; }
-    .blank-slot {
-      display:inline-block; min-width:90px; border-bottom: 3px solid var(--cat-color);
-      font-weight:700; color: var(--cat-color); padding: 0 4px;
-    }
-    .blank-slot.filled { color: var(--ink); }
-    .blank-slot.wrong { color: var(--coral); border-color: var(--coral); }
-
-    .feedback-line { min-height: 22px; font-weight:700; margin: 12px 0; }
-    .feedback-line.right { color:#3F8A38; }
-    .feedback-line.wrong { color: var(--coral); }
-
-    .options-grid { display:grid; grid-template-columns: 1fr 1fr; gap:10px; width:100%; max-width:420px; }
-    .option-btn {
-      border: 2px solid #E7E1D3; background:#fff; border-radius:16px; padding:14px 8px;
-      font-weight:700; font-size:15px;
-    }
-    .option-btn:hover:not(:disabled) { border-color: var(--cat-color); }
-    .option-btn:disabled { opacity:.6; }
-
-    .chip-row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:16px; }
-    .chip {
-      border:2px solid #E7E1D3; background:#fff; border-radius:999px; padding:9px 16px; font-weight:700;
-    }
-    .chip.selected { border-color: var(--cat-color); background: var(--sky-light); }
-
-    .write-word { display:flex; align-items:center; justify-content:center; gap:8px; font-family:'Baloo 2'; font-size:20px; font-weight:700; }
-    .write-emoji { font-size: 28px; }
-    .write-hint { color: var(--ink-soft); margin: 6px 0 14px; }
-    .write-input {
-      width:100%; border:2px solid #E7E1D3; border-radius:14px; padding:12px; font-size:15px;
-      resize:none; outline:none;
-    }
-    .write-input:focus { border-color: var(--cat-color); }
-
-    /* ---------- modal / toast ---------- */
-    .modal-backdrop, .toast-backdrop {
-      position:absolute; inset:0; background: rgba(46,42,38,0.35);
-      display:flex; align-items:center; justify-content:center; padding: 20px;
-      border-radius: 20px;
-    }
-    .modal-card, .toast-card {
-      background:#fff; border-radius:22px; padding:24px; max-width:340px; text-align:center;
-      position:relative; overflow:hidden;
-    }
-    .modal-card p { color: var(--ink-soft); margin: 10px 0 18px; }
-    .modal-actions { display:flex; gap:10px; justify-content:center; }
-    .toast-emoji { font-size: 40px; }
-    .toast-card h2 { font-size:19px; margin-top:6px; }
-    .toast-card p { color: var(--ink-soft); margin-top:6px; }
-    .confetti-bit {
-      position:absolute; top:-10px; width:7px; height:7px; border-radius:2px;
-      animation: fall 1.4s ease-in forwards;
-    }
-    @keyframes fall { to { transform: translateY(220px) rotate(200deg); opacity:0; } }
-
-    @media (max-width: 480px) {
-      .screen { padding: 16px; }
-      .setup-body { flex-direction:column; align-items:center; text-align:center; }
-    }
+    .quiz-hint { color: var(--ink-soft); font-style: italic; }
+    .sentence-card { font-size: 18px; background: var(--sky-light); padding: 14px; border-radius: 14px; margin: 14px 0; }
+    .write-input { width: 100%; padding: 12px; border: 2px solid #E7E1D3; border-radius: 14px; font-size: 15px; margin: 12px 0; outline: none; }
+    .err-msg { color: #E74C3C; font-size: 13px; font-weight: 700; }
+    .success-msg { color: var(--green); font-size: 15px; font-weight: 700; margin-top: 12px; }
   `);
 }
 
