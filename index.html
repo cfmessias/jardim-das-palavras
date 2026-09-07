@@ -20,7 +20,7 @@
 const { useState, useEffect, createElement: h } = React;
 
 /* =========================================================================
-   BANCO DE PALAVRAS POR ANO DE ESCOLARIDADE (1º AO 6º ANO)
+   BANCO DE PALAVRAS POR ANO DE ESCOLARIDADE
    ========================================================================= */
 
 const WORDS_BY_GRADE = {
@@ -64,6 +64,7 @@ const WORDS_BY_GRADE = {
 
 const INITIAL_CLASS_DATA = {
   teacherPin: "1234",
+  featuredWordId: "g1_gato",
   students: [
     { id: "st_1", name: "Ana Silva", pin: "1111", grade: 2, progress: {} },
     { id: "st_2", name: "Diogo Costa", pin: "2222", grade: 4, progress: {} }
@@ -74,13 +75,25 @@ function normalize(s) {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
+function speak(text) {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'pt-PT';
+    u.rate = 0.9;
+    window.speechSynthesis.speak(u);
+  }
+}
+
 /* =========================================================================
-   COMPONENTE MASCOTE: MOCHO PICO
+   COMPONENTE MASCOTE: MOCHO PICO EVOLUTIVO
    ========================================================================= */
 
-function MochoPico({ mood, message }) {
-  // Estados: "reading" (óculos), "happy" (festa), "thinking" (atenção), "retry" (tentar de novo)
+function MochoPico({ mood, message, level = 1 }) {
   let icon = "🦉👓";
+  if (level >= 2) icon = "🦉🎓";
+  if (level >= 4) icon = "🦉👑";
+
   if (mood === "happy") icon = "🦉🎉";
   if (mood === "thinking") icon = "🦉🧐";
   if (mood === "retry") icon = "🦉💪";
@@ -88,7 +101,7 @@ function MochoPico({ mood, message }) {
   return h("div", { className: "pico-container" },
     h("div", { className: "pico-avatar" }, icon),
     h("div", { className: "pico-bubble" },
-      h("strong", null, "Mocho Pico diz:"),
+      h("strong", null, `Mocho Pico (Nível ${level}):`),
       h("p", null, message)
     )
   );
@@ -155,6 +168,7 @@ function App() {
     }),
     screen === "game" && currentStudent && h(StudentGame, {
       student: currentStudent,
+      featuredWordId: classData.featuredWordId,
       onProgress: (wordId, stage) => handleUpdateStudentProgress(currentStudent.id, wordId, stage),
       onLogout: () => { setCurrentStudent(null); setScreen("login"); }
     })
@@ -162,26 +176,42 @@ function App() {
 }
 
 /* =========================================================================
-   ECRÃS DE AUTENTICAÇÃO
+   LOGIN
    ========================================================================= */
 
 function LoginScreen({ students, onSelectStudent, onOpenTeacher }) {
+  const [selectedGrade, setSelectedGrade] = useState(1);
+  const filteredStudents = students.filter(s => s.grade === selectedGrade);
+
   return h("div", { className: "screen login-screen" },
     h("div", { className: "header-tag" }, "🌻 O Jardim das Palavras · Escolas"),
     h("h1", null, "Quem vai jogar agora?"),
-    h("p", { className: "sub" }, "Escolhe o teu nome da lista para entrares na tua aventura."),
-    h("div", { className: "student-grid" },
-      students.map(s => h("button", {
+    h("p", { className: "sub" }, "Seleciona o teu ano escolar para encontrares o teu nome."),
+    
+    h("div", { className: "grade-selector" },
+      [1, 2, 3, 4, 5, 6].map(g => h("button", {
+        key: g,
+        className: `grade-tab ${selectedGrade === g ? "active" : ""}`,
+        onClick: () => setSelectedGrade(g)
+      }, `${g}.º Ano`))
+    ),
+
+    filteredStudents.length > 0 ? h("div", { className: "student-grid" },
+      filteredStudents.map(s => h("button", {
         key: s.id, className: "student-card",
         onClick: () => onSelectStudent(s.id)
       },
         h("div", { className: "avatar-circle" }, s.name.charAt(0)),
         h("div", { className: "st-info" },
           h("div", { className: "st-name" }, s.name),
-          h("div", { className: "st-grade" }, `${s.grade}.º Ano de Escolaridade`)
+          h("div", { className: "st-grade" }, `${s.grade}.º Ano`)
         )
       ))
+    ) : h("div", { className: "empty-students" },
+      h("p", null, `Ainda não existem alunos inscritos no ${selectedGrade}.º Ano.`),
+      h("small", null, "Pede ao teu professor para adicionar o teu nome no Painel de Gestão.")
     ),
+
     h("button", { className: "teacher-link", onClick: onOpenTeacher }, "🔑 Área do Professor")
   );
 }
@@ -251,7 +281,7 @@ function TeacherPinScreen({ correctPin, onBack, onSuccess }) {
 }
 
 /* =========================================================================
-   PAINEL DO PROFESSOR
+   PAINEL DO PROFESSOR (COM DESTAQUE E MÁSTRIA)
    ========================================================================= */
 
 function TeacherDashboard({ classData, onSaveData, onExit }) {
@@ -259,6 +289,9 @@ function TeacherDashboard({ classData, onSaveData, onExit }) {
   const [newPin, setNewPin] = useState("");
   const [newGrade, setNewGrade] = useState(1);
   const [teacherPinInput, setTeacherPinInput] = useState(classData.teacherPin);
+  const [featuredId, setFeaturedId] = useState(classData.featuredWordId || "g1_gato");
+
+  const allWords = Object.values(WORDS_BY_GRADE).flat();
 
   function handleAddStudent(e) {
     e.preventDefault();
@@ -282,11 +315,9 @@ function TeacherDashboard({ classData, onSaveData, onExit }) {
     }
   }
 
-  function handleUpdateTeacherPin() {
-    if (teacherPinInput.trim().length >= 4) {
-      onSaveData({ ...classData, teacherPin: teacherPinInput.trim() });
-      alert("PIN do professor atualizado!");
-    }
+  function handleUpdateSettings() {
+    onSaveData({ ...classData, teacherPin: teacherPinInput.trim(), featuredWordId: featuredId });
+    alert("Definições atualizadas com sucesso!");
   }
 
   return h("div", { className: "screen dashboard-screen" },
@@ -318,20 +349,25 @@ function TeacherDashboard({ classData, onSaveData, onExit }) {
         )
       ),
       h("div", { className: "dash-card" },
-        h("h3", null, "Definições"),
+        h("h3", null, "Configurações da Turma"),
         h("div", { className: "form-stack" },
+          h("label", { className: "field-label" }, "Palavra em Destaque (Desafio)"),
+          h("select", {
+            className: "text-input", value: featuredId,
+            onChange: (e) => setFeaturedId(e.target.value)
+          },
+            allWords.map(w => h("option", { key: w.id, value: w.id }, `${w.emoji} ${w.word}`))
+          ),
           h("label", { className: "field-label" }, "Alterar PIN do Professor"),
-          h("div", { className: "row-input" },
-            h("input", {
-              className: "text-input", value: teacherPinInput,
-              onChange: (e) => setTeacherPinInput(e.target.value)
-            }),
-            h("button", { className: "btn-primary", onClick: handleUpdateTeacherPin }, "Guardar")
-          )
+          h("input", {
+            className: "text-input", value: teacherPinInput,
+            onChange: (e) => setTeacherPinInput(e.target.value)
+          }),
+          h("button", { className: "btn-primary", onClick: handleUpdateSettings }, "Guardar Alterações")
         )
       )
     ),
-    h("h2", { style: { marginTop: "24px" } }, "Lista de Alunos"),
+    h("h2", { style: { marginTop: "24px" } }, "Lista de Alunos e Progresso"),
     h("div", { className: "table-card" },
       h("table", { className: "dash-table" },
         h("thead", null,
@@ -339,7 +375,7 @@ function TeacherDashboard({ classData, onSaveData, onExit }) {
             h("th", null, "Nome"),
             h("th", null, "Ano"),
             h("th", null, "PIN"),
-            h("th", null, "Progresso"),
+            h("th", null, "Palavras Dominadas"),
             h("th", null, "Ações")
           )
         ),
@@ -351,7 +387,7 @@ function TeacherDashboard({ classData, onSaveData, onExit }) {
               h("td", { className: "td-bold" }, st.name),
               h("td", null, `${st.grade}.º Ano`),
               h("td", null, h("code", null, st.pin)),
-              h("td", null, `${completed} / ${gradeWords.length} palavras dominadas`),
+              h("td", null, `${completed} / ${gradeWords.length} completas`),
               h("td", null,
                 h("button", { className: "danger-btn", onClick: () => handleDeleteStudent(st.id) }, "Remover")
               )
@@ -364,26 +400,46 @@ function TeacherDashboard({ classData, onSaveData, onExit }) {
 }
 
 /* =========================================================================
-   MÓDULO DO JOGO COM MOCHO PICO
+   MÓDULO DO JOGO DO ALUNO
    ========================================================================= */
 
-function StudentGame({ student, onProgress, onLogout }) {
+function StudentGame({ student, featuredWordId, onProgress, onLogout }) {
   const [activeWord, setActiveWord] = useState(null);
   const words = WORDS_BY_GRADE[student.grade] || WORDS_BY_GRADE[1];
+
+  const masteredCount = words.filter(w => (student.progress[w.id] || 0) === 3).length;
+  const picoLevel = Math.floor(masteredCount / 2) + 1;
+
+  const featuredWord = Object.values(WORDS_BY_GRADE).flat().find(w => w.id === featuredWordId);
 
   return h("div", { className: "screen game-screen" },
     h("header", { className: "game-header" },
       h("div", null,
         h("h2", null, `Olá, ${student.name}!`),
-        h("span", { className: "grade-badge" }, `${student.grade}.º Ano de Escolaridade`)
+        h("span", { className: "grade-badge" }, `${student.grade}.º Ano`)
       ),
       h("button", { className: "ghost-btn", onClick: onLogout }, "Sair")
     ),
     !activeWord ? h("div", null,
       h(MochoPico, {
+        level: picoLevel,
         mood: "reading",
-        message: `Bem-vindo ao teu jardim! Escolhe uma palavra para começarmos os 3 passos de aprendizagem.`
+        message: `Bem-vindo ao teu jardim! Tens ${masteredCount} palavra(s) dominadas. Vamos praticar mais?`
       }),
+
+      /* Banner da Palavra em Destaque */
+      featuredWord && h("div", { className: "featured-box", onClick: () => setActiveWord(featuredWord) },
+        h("div", { className: "feat-tag" }, "⭐ DESAFIO ESPECIAL DA TURMA"),
+        h("div", { className: "feat-content" },
+          h("span", { className: "feat-emoji" }, featuredWord.emoji),
+          h("div", null,
+            h("strong", null, featuredWord.word),
+            h("p", null, featuredWord.hint)
+          )
+        )
+      ),
+
+      h("h3", { style: { marginTop: "20px" } }, "As tuas Palavras:"),
       h("div", { className: "word-grid" },
         words.map(w => {
           const stage = student.progress[w.id] || 0;
@@ -400,6 +456,7 @@ function StudentGame({ student, onProgress, onLogout }) {
       )
     ) : h(WordActivity, {
       word: activeWord,
+      picoLevel,
       currentStage: student.progress[activeWord.id] || 0,
       onBack: () => setActiveWord(null),
       onAdvance: () => {
@@ -411,24 +468,24 @@ function StudentGame({ student, onProgress, onLogout }) {
   );
 }
 
-function WordActivity({ word, currentStage, onBack, onAdvance }) {
+function WordActivity({ word, picoLevel, currentStage, onBack, onAdvance }) {
   const [userText, setUserText] = useState("");
   const [picoState, setPicoState] = useState({
     mood: "reading",
     message: currentStage === 0
-      ? `Lê a palavra "${word.word}" e observa o seu significado.`
+      ? `Lê a palavra "${word.word}" e clica no botão de áudio para a ouvires.`
       : currentStage === 1
-      ? `Repara bem como a palavra "${word.word}" é usada nesta frase.`
-      : `Agora é a tua vez! Escreve uma frase tua com a palavra "${word.word}".`
+      ? `Lê a frase de exemplo e repara onde a palavra "${word.word}" encaixa.`
+      : `Agora escreve a tua própria frase usando a palavra "${word.word}".`
   });
 
   function handleStage1() {
-    setPicoState({ mood: "happy", message: "Muito bem! Reconhecestes a palavra na perfeição!" });
+    setPicoState({ mood: "happy", message: "Muito bem! Reconhecestes a palavra!" });
     setTimeout(onAdvance, 1000);
   }
 
   function handleStage2() {
-    setPicoState({ mood: "happy", message: "Excelente! O contexto da frase está compreendido!" });
+    setPicoState({ mood: "happy", message: "Excelente! Compreendeste o contexto da frase!" });
     setTimeout(onAdvance, 1000);
   }
 
@@ -438,28 +495,35 @@ function WordActivity({ word, currentStage, onBack, onAdvance }) {
     const isLongEnough = userText.trim().split(/\s+/).length >= 3;
 
     if (containsWord && isLongEnough) {
-      setPicoState({ mood: "happy", message: "Espetacular! Criaste uma excelente frase. Palavra dominada!" });
+      setPicoState({ mood: "happy", message: "Espetacular! Frase perfeita. Palavra dominada com sucesso!" });
       setTimeout(onAdvance, 1200);
     } else if (!containsWord) {
-      setPicoState({ mood: "thinking", message: `Toma atenção: a tua frase tem de incluir a palavra "${word.word}".` });
+      setPicoState({ mood: "thinking", message: `A tua frase precisa de incluir a palavra "${word.word}".` });
     } else {
-      setPicoState({ mood: "retry", message: "A tua frase está muito curta. Tenta outra vez com mais palavras!" });
+      setPicoState({ mood: "retry", message: "A frase é muito curta. Adiciona mais algumas palavras!" });
     }
   }
 
   return h("div", { className: "activity-box" },
-    h("button", { className: "ghost-btn", onClick: onBack }, "← Voltar às palavras"),
-    h(MochoPico, { mood: picoState.mood, message: picoState.message }),
+    h("button", { className: "ghost-btn", onClick: onBack }, "← Voltar"),
+    h(MochoPico, { level: picoLevel, mood: picoState.mood, message: picoState.message }),
     h("div", { className: "quiz-card" },
       h("div", { className: "quiz-emoji" }, word.emoji),
-      h("h2", null, word.word),
-      h("p", { className: "quiz-hint" }, word.hint)
+      h("div", { className: "audio-row" },
+        h("h2", null, word.word),
+        h("button", { className: "audio-btn", onClick: () => speak(word.word), title: "Ouvir palavra" }, "🔊")
+      ),
+      h("p", { className: "quiz-hint" }, word.hint),
+      h("button", { className: "ghost-btn small", onClick: () => speak(word.hint) }, "🔊 Ouvir dica")
     ),
     currentStage === 0 && h("div", { className: "action-area" },
-      h("button", { className: "btn-primary big", onClick: handleStage1 }, `Avançar para o Passo 2`)
+      h("button", { className: "btn-primary big", onClick: handleStage1 }, "Avançar para o Passo 2")
     ),
     currentStage === 1 && h("div", { className: "action-area" },
-      h("p", { className: "sentence-card" }, word.blankBefore, h("u", null, word.word), word.blankAfter),
+      h("p", { className: "sentence-card" },
+        word.blankBefore, h("u", null, word.word), word.blankAfter,
+        h("button", { className: "audio-btn-inline", onClick: () => speak(`${word.blankBefore}${word.word}${word.blankAfter}`) }, "🔊")
+      ),
       h("button", { className: "btn-primary big", onClick: handleStage2 }, "Avançar para o Passo 3")
     ),
     currentStage === 2 && h("div", { className: "action-area" },
@@ -467,7 +531,7 @@ function WordActivity({ word, currentStage, onBack, onAdvance }) {
         className: "write-input", rows: 3, placeholder: `Escreve aqui a tua frase com a palavra ${word.word}...`,
         value: userText, onChange: (e) => setUserText(e.target.value)
       }),
-      h("button", { className: "btn-primary big", onClick: handleStage3 }, "Validar Frase com o Pico")
+      h("button", { className: "btn-primary big", onClick: handleStage3 }, "Validar com o Pico")
     )
   );
 }
@@ -496,16 +560,34 @@ function Style() {
     .screen { padding: 24px; max-width: 720px; margin: 0 auto; }
     .center-screen { display:flex; justify-content:center; align-items:center; min-height: 80vh; }
 
-    /* ---------- MOCHO PICO COMPONENT ---------- */
+    .grade-selector { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 20px; }
+    .grade-tab {
+      background: #fff; border: 2px solid #E7E1D3; border-radius: 12px; padding: 8px 16px;
+      font-weight: 700; color: var(--ink-soft); cursor: pointer; white-space: nowrap; transition: all .2s;
+    }
+    .grade-tab.active { background: var(--coral); color: #fff; border-color: var(--coral); box-shadow: 0 3px 0 #C85A3B; }
+
+    .empty-students { text-align: center; padding: 32px 16px; background: #fff; border: 2px dashed #E7E1D3; border-radius: 18px; color: var(--ink-soft); margin-bottom: 24px; }
+
     .pico-container {
       display: flex; align-items: center; gap: 14px; background: #FFF3D6;
       border: 2px solid #F1C27D; border-radius: 20px; padding: 14px 18px; margin-bottom: 20px;
       box-shadow: 0 4px 0 rgba(0,0,0,0.03);
     }
     .pico-avatar { font-size: 42px; line-height: 1; flex-shrink: 0; }
-    .pico-bubble { text-align: left; }
     .pico-bubble strong { display: block; font-size: 12px; color: #9A7315; text-transform: uppercase; }
     .pico-bubble p { margin: 2px 0 0; font-weight: 700; font-size: 15px; color: #5C4308; }
+
+    .featured-box {
+      background: linear-gradient(135deg, #FFF0D6 0%, #FFDF9E 100%); border: 2px solid #F1C27D;
+      border-radius: 18px; padding: 16px; cursor: pointer; transition: transform .2s;
+    }
+    .featured-box:hover { transform: translateY(-2px); }
+    .feat-tag { font-size: 11px; font-weight: 800; color: #B36B00; margin-bottom: 6px; }
+    .feat-content { display: flex; align-items: center; gap: 14px; }
+    .feat-emoji { font-size: 36px; }
+    .feat-content strong { font-size: 18px; font-family: 'Baloo 2'; }
+    .feat-content p { margin: 0; font-size: 13px; color: #664300; }
 
     h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0 0 8px; }
     .sub { color: var(--ink-soft); margin-bottom: 20px; line-height: 1.4; }
@@ -539,6 +621,7 @@ function Style() {
     }
     .btn-primary.big { width: 100%; padding: 14px; font-size: 16px; }
     .ghost-btn { background: none; border: none; color: var(--ink-soft); font-weight: 700; cursor: pointer; }
+    .ghost-btn.small { font-size: 12px; }
     .danger-btn { background: #E74C3C; color: #fff; border: none; padding: 6px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
 
     .text-input { width: 100%; padding: 10px; border: 2px solid #E7E1D3; border-radius: 12px; outline: none; }
@@ -572,7 +655,10 @@ function Style() {
     .activity-box { background: #fff; border: 2px solid #E7E1D3; border-radius: 24px; padding: 24px; text-align: center; }
     .quiz-card { margin: 16px 0; }
     .quiz-emoji { font-size: 56px; }
-    .quiz-hint { color: var(--ink-soft); font-style: italic; }
+    .audio-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .audio-btn { background: var(--sky-light); border: none; font-size: 18px; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; }
+    .audio-btn-inline { background: none; border: none; cursor: pointer; font-size: 16px; margin-left: 6px; }
+    .quiz-hint { color: var(--ink-soft); font-style: italic; margin-bottom: 4px; }
     .sentence-card { font-size: 18px; background: var(--sky-light); padding: 14px; border-radius: 14px; margin: 14px 0; }
     .write-input { width: 100%; padding: 12px; border: 2px solid #E7E1D3; border-radius: 14px; font-size: 15px; margin: 12px 0; outline: none; }
   `);
