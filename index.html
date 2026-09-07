@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
 <title>O Jardim das Palavras - Escolas</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌻</text></svg>" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦉</text></svg>" />
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <style>
@@ -17,7 +17,7 @@
 <div id="root"></div>
 
 <script type="text/javascript">
-const { useState, useEffect, useRef, createElement: h } = React;
+const { useState, useEffect, createElement: h } = React;
 
 /* =========================================================================
    BANCO DE PALAVRAS POR ANO DE ESCOLARIDADE (1º AO 6º ANO)
@@ -65,8 +65,8 @@ const WORDS_BY_GRADE = {
 const INITIAL_CLASS_DATA = {
   teacherPin: "1234",
   students: [
-    { id: "st_1", name: "Ana Silva", pin: "1111", grade: 2, avatar: { skin: "#FFDBB4", hairColor: "#D4A017", hairStyle: "liso" }, progress: {} },
-    { id: "st_2", name: "Diogo Costa", pin: "2222", grade: 4, avatar: { skin: "#C68642", hairColor: "#2E2321", hairStyle: "encaracolado" }, progress: {} }
+    { id: "st_1", name: "Ana Silva", pin: "1111", grade: 2, progress: {} },
+    { id: "st_2", name: "Diogo Costa", pin: "2222", grade: 4, progress: {} }
   ]
 };
 
@@ -75,15 +75,34 @@ function normalize(s) {
 }
 
 /* =========================================================================
+   COMPONENTE MASCOTE: MOCHO PICO
+   ========================================================================= */
+
+function MochoPico({ mood, message }) {
+  // Estados: "reading" (óculos), "happy" (festa), "thinking" (atenção), "retry" (tentar de novo)
+  let icon = "🦉👓";
+  if (mood === "happy") icon = "🦉🎉";
+  if (mood === "thinking") icon = "🦉🧐";
+  if (mood === "retry") icon = "🦉💪";
+
+  return h("div", { className: "pico-container" },
+    h("div", { className: "pico-avatar" }, icon),
+    h("div", { className: "pico-bubble" },
+      h("strong", null, "Mocho Pico diz:"),
+      h("p", null, message)
+    )
+  );
+}
+
+/* =========================================================================
    COMPONENTE PRINCIPAL
    ========================================================================= */
 
 function App() {
   const [classData, setClassData] = useState(INITIAL_CLASS_DATA);
-  const [screen, setScreen] = useState("login"); // login | teacher_pin | teacher_dash | student_pin | game
+  const [screen, setScreen] = useState("login");
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [currentStudent, setCurrentStudent] = useState(null);
-  const [activeWord, setActiveWord] = useState(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("jdp_class_data");
@@ -143,7 +162,7 @@ function App() {
 }
 
 /* =========================================================================
-   ECRÃS DE LOGIN E PIN
+   ECRÃS DE AUTENTICAÇÃO
    ========================================================================= */
 
 function LoginScreen({ students, onSelectStudent, onOpenTeacher }) {
@@ -232,7 +251,7 @@ function TeacherPinScreen({ correctPin, onBack, onSuccess }) {
 }
 
 /* =========================================================================
-   PAINEL DO PROFESSOR (GESTAO DE ALUNOS E TURMA)
+   PAINEL DO PROFESSOR
    ========================================================================= */
 
 function TeacherDashboard({ classData, onSaveData, onExit }) {
@@ -249,7 +268,6 @@ function TeacherDashboard({ classData, onSaveData, onExit }) {
       name: newName.trim(),
       pin: newPin.trim(),
       grade: parseInt(newGrade, 10),
-      avatar: { skin: "#FFDBB4", hairColor: "#2E2321", hairStyle: "liso" },
       progress: {}
     };
     onSaveData({ ...classData, students: [...classData.students, newSt] });
@@ -267,35 +285,7 @@ function TeacherDashboard({ classData, onSaveData, onExit }) {
   function handleUpdateTeacherPin() {
     if (teacherPinInput.trim().length >= 4) {
       onSaveData({ ...classData, teacherPin: teacherPinInput.trim() });
-      alert("PIN do professor atualizado com sucesso!");
-    }
-  }
-
-  function handleExportJSON() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(classData, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", "turma_jardim_palavras.json");
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-  }
-
-  function handleImportJSON(e) {
-    const fileReader = new FileReader();
-    if (e.target.files[0]) {
-      fileReader.readAsText(e.target.files[0], "UTF-8");
-      fileReader.onload = (event) => {
-        try {
-          const parsed = JSON.parse(event.target.result);
-          if (parsed.students && parsed.teacherPin) {
-            onSaveData(parsed);
-            alert("Dados da turma importados com sucesso!");
-          }
-        } catch(err) {
-          alert("Ficheiro JSON inválido.");
-        }
-      };
+      alert("PIN do professor atualizado!");
     }
   }
 
@@ -328,7 +318,7 @@ function TeacherDashboard({ classData, onSaveData, onExit }) {
         )
       ),
       h("div", { className: "dash-card" },
-        h("h3", null, "Definições da Conta"),
+        h("h3", null, "Definições"),
         h("div", { className: "form-stack" },
           h("label", { className: "field-label" }, "Alterar PIN do Professor"),
           h("div", { className: "row-input" },
@@ -337,14 +327,6 @@ function TeacherDashboard({ classData, onSaveData, onExit }) {
               onChange: (e) => setTeacherPinInput(e.target.value)
             }),
             h("button", { className: "btn-primary", onClick: handleUpdateTeacherPin }, "Guardar")
-          ),
-          h("hr", null),
-          h("div", { className: "row-input" },
-            h("button", { className: "ghost-btn", onClick: handleExportJSON }, "💾 Exportar Turma (JSON)"),
-            h("label", { className: "ghost-btn upload-btn" },
-              "📁 Importar JSON",
-              h("input", { type: "file", accept: ".json", onChange: handleImportJSON, style: { display: "none" } })
-            )
           )
         )
       )
@@ -382,7 +364,7 @@ function TeacherDashboard({ classData, onSaveData, onExit }) {
 }
 
 /* =========================================================================
-   MÓDULO DO JOGO (ALUNO)
+   MÓDULO DO JOGO COM MOCHO PICO
    ========================================================================= */
 
 function StudentGame({ student, onProgress, onLogout }) {
@@ -398,8 +380,10 @@ function StudentGame({ student, onProgress, onLogout }) {
       h("button", { className: "ghost-btn", onClick: onLogout }, "Sair")
     ),
     !activeWord ? h("div", null,
-      h("h1", { className: "map-title" }, "Palavras para Aprender"),
-      h("p", { className: "sub" }, "Escolhe uma palavra para completar os 3 passos."),
+      h(MochoPico, {
+        mood: "reading",
+        message: `Bem-vindo ao teu jardim! Escolhe uma palavra para começarmos os 3 passos de aprendizagem.`
+      }),
       h("div", { className: "word-grid" },
         words.map(w => {
           const stage = student.progress[w.id] || 0;
@@ -429,54 +413,62 @@ function StudentGame({ student, onProgress, onLogout }) {
 
 function WordActivity({ word, currentStage, onBack, onAdvance }) {
   const [userText, setUserText] = useState("");
-  const [feedback, setFeedback] = useState(null);
+  const [picoState, setPicoState] = useState({
+    mood: "reading",
+    message: currentStage === 0
+      ? `Lê a palavra "${word.word}" e observa o seu significado.`
+      : currentStage === 1
+      ? `Repara bem como a palavra "${word.word}" é usada nesta frase.`
+      : `Agora é a tua vez! Escreve uma frase tua com a palavra "${word.word}".`
+  });
 
   function handleStage1() {
-    setFeedback("right");
-    setTimeout(() => { setFeedback(null); onAdvance(); }, 800);
+    setPicoState({ mood: "happy", message: "Muito bem! Reconhecestes a palavra na perfeição!" });
+    setTimeout(onAdvance, 1000);
   }
 
   function handleStage2() {
-    setFeedback("right");
-    setTimeout(() => { setFeedback(null); onAdvance(); }, 800);
+    setPicoState({ mood: "happy", message: "Excelente! O contexto da frase está compreendido!" });
+    setTimeout(onAdvance, 1000);
   }
 
   function handleStage3() {
     const clean = normalize(userText);
-    if (clean.includes(normalize(word.word)) && userText.trim().split(/\s+/).length >= 3) {
-      setFeedback("right");
-      setTimeout(() => { setFeedback(null); onAdvance(); }, 1000);
+    const containsWord = clean.includes(normalize(word.word));
+    const isLongEnough = userText.trim().split(/\s+/).length >= 3;
+
+    if (containsWord && isLongEnough) {
+      setPicoState({ mood: "happy", message: "Espetacular! Criaste uma excelente frase. Palavra dominada!" });
+      setTimeout(onAdvance, 1200);
+    } else if (!containsWord) {
+      setPicoState({ mood: "thinking", message: `Toma atenção: a tua frase tem de incluir a palavra "${word.word}".` });
     } else {
-      setFeedback("wrong");
+      setPicoState({ mood: "retry", message: "A tua frase está muito curta. Tenta outra vez com mais palavras!" });
     }
   }
 
   return h("div", { className: "activity-box" },
     h("button", { className: "ghost-btn", onClick: onBack }, "← Voltar às palavras"),
+    h(MochoPico, { mood: picoState.mood, message: picoState.message }),
     h("div", { className: "quiz-card" },
       h("div", { className: "quiz-emoji" }, word.emoji),
       h("h2", null, word.word),
       h("p", { className: "quiz-hint" }, word.hint)
     ),
     currentStage === 0 && h("div", { className: "action-area" },
-      h("h3", null, "Passo 1: Reconhece a palavra"),
-      h("button", { className: "btn-primary big", onClick: handleStage1 }, `Confirmar palavra "${word.word}"`)
+      h("button", { className: "btn-primary big", onClick: handleStage1 }, `Avançar para o Passo 2`)
     ),
     currentStage === 1 && h("div", { className: "action-area" },
-      h("h3", null, "Passo 2: Completa a frase"),
       h("p", { className: "sentence-card" }, word.blankBefore, h("u", null, word.word), word.blankAfter),
-      h("button", { className: "btn-primary big", onClick: handleStage2 }, "Compreendi o contexto")
+      h("button", { className: "btn-primary big", onClick: handleStage2 }, "Avançar para o Passo 3")
     ),
     currentStage === 2 && h("div", { className: "action-area" },
-      h("h3", null, `Passo 3: Escreve uma frase tua com "${word.word}"`),
       h("textarea", {
-        className: "write-input", rows: 3, placeholder: "Escreve a tua frase aqui...",
+        className: "write-input", rows: 3, placeholder: `Escreve aqui a tua frase com a palavra ${word.word}...`,
         value: userText, onChange: (e) => setUserText(e.target.value)
       }),
-      feedback === "wrong" && h("p", { className: "err-msg" }, `A frase deve conter a palavra "${word.word}" e ter pelo menos 3 palavras.`),
-      h("button", { className: "btn-primary big", onClick: handleStage3 }, "Validar Frase")
-    ),
-    feedback === "right" && h("p", { className: "success-msg" }, "Excelente! Passo concluído com sucesso! 🎉")
+      h("button", { className: "btn-primary big", onClick: handleStage3 }, "Validar Frase com o Pico")
+    )
   );
 }
 
@@ -503,7 +495,18 @@ function Style() {
     .jdp-root * { box-sizing: border-box; }
     .screen { padding: 24px; max-width: 720px; margin: 0 auto; }
     .center-screen { display:flex; justify-content:center; align-items:center; min-height: 80vh; }
-    
+
+    /* ---------- MOCHO PICO COMPONENT ---------- */
+    .pico-container {
+      display: flex; align-items: center; gap: 14px; background: #FFF3D6;
+      border: 2px solid #F1C27D; border-radius: 20px; padding: 14px 18px; margin-bottom: 20px;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.03);
+    }
+    .pico-avatar { font-size: 42px; line-height: 1; flex-shrink: 0; }
+    .pico-bubble { text-align: left; }
+    .pico-bubble strong { display: block; font-size: 12px; color: #9A7315; text-transform: uppercase; }
+    .pico-bubble p { margin: 2px 0 0; font-weight: 700; font-size: 15px; color: #5C4308; }
+
     h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0 0 8px; }
     .sub { color: var(--ink-soft); margin-bottom: 20px; line-height: 1.4; }
     .header-tag { font-size: 13px; font-weight: 700; color: var(--coral); text-transform: uppercase; margin-bottom: 8px; }
@@ -552,7 +555,7 @@ function Style() {
     .dash-table th { background: #F8F6F0; font-weight: 700; }
     .td-bold { font-weight: 700; }
 
-    .game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
     .grade-badge { background: var(--sky-light); color: #2980B9; font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 999px; }
 
     .word-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; }
@@ -572,8 +575,6 @@ function Style() {
     .quiz-hint { color: var(--ink-soft); font-style: italic; }
     .sentence-card { font-size: 18px; background: var(--sky-light); padding: 14px; border-radius: 14px; margin: 14px 0; }
     .write-input { width: 100%; padding: 12px; border: 2px solid #E7E1D3; border-radius: 14px; font-size: 15px; margin: 12px 0; outline: none; }
-    .err-msg { color: #E74C3C; font-size: 13px; font-weight: 700; }
-    .success-msg { color: var(--green); font-size: 15px; font-weight: 700; margin-top: 12px; }
   `);
 }
 
